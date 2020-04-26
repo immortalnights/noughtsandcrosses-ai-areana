@@ -266,21 +266,6 @@ module.exports = class LearningAI
 		this.memory = new Memory();
 	}
 
-	finish(winner)
-	{
-		let reward = 0;
-		if (this.token === winner)
-		{
-			reward = 1;
-		}
-		else if (winner !== 'draw')
-		{
-			reward = -1;
-		}
-
-		this.memory.commit(reward);
-	}
-
 	run(grid)
 	{
 		// If this move has been played before
@@ -333,5 +318,20 @@ module.exports = class LearningAI
 		this.memory.record(grid.clone().data, choice);
 
 		return grid.toLocation(choice);
+	}
+
+	finish(winner)
+	{
+		let reward = 0;
+		if (this.token === winner)
+		{
+			reward = 1;
+		}
+		else if (winner !== 'draw')
+		{
+			reward = -1;
+		}
+
+		this.memory.commit(reward);
 	}
 };

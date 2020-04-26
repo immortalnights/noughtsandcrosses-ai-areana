@@ -1,7 +1,6 @@
 const _ = require('underscore');
 const EventEmitter = require('events');
-const { Brain } = require('./aiplayer');
-const LearningBrain = require('./learningai');
+const Brains = require('./brains/index');
 
 class AI extends EventEmitter
 {
@@ -16,7 +15,9 @@ class AI extends EventEmitter
 		this.token = token;
 		this.moveFailures = 0;
 		this.difficulty = difficulty;
-		this.brain = Brain[difficulty] ? Brain[difficulty] : new LearningBrain();
+		this.brain = Brains[difficulty] ? new Brains[difficulty] : new Brains['novice'];
+
+		console.assert(this.brain, "Failed to initialize AI Player brain");
 	}
 
 	joinedGame(game)
@@ -46,17 +47,7 @@ class AI extends EventEmitter
 
 	takeTurn(game)
 	{
-		let location;
-		if (this.brain.run)
-		{
-			location = this.brain.run(game.board);
-		}
-		else
-		{
-			this.brain.call(null, this, game.board, (loc) => {
-				location = loc;
-			});
-		}
+		const location = this.brain.run(this, game.board);
 
 		this.emit('place:token', location);
 

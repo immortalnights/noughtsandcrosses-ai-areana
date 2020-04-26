@@ -5,18 +5,35 @@ class Grid
 {
 	constructor(options)
 	{
-		if (options instanceof Object)
+		if (options instanceof Array)
 		{
-			this.width = options.x || options.width;
-			this.height = options.y || options.height;
+			// console.debug("Import", options);
+			this.data = options.map(r => r.map(c => c ? c : ''));
+			this.width = this.data[0].length;
+			this.height = this.data.length;
+		}
+		else if (options instanceof String && options.length === 9)
+		{
+			const parts = str.split('');
+			this.data = [parts.slice(0, 3), parts.slice(3, 6), parts.slice(9, 9)];
+			this.width = this.data[0].length;
+			this.height = this.data.length;
 		}
 		else
 		{
-			this.width = arguments[0];
-			this.height = arguments[1];
-		}
+			if (options instanceof Object)
+			{
+				this.width = options.x || options.width;
+				this.height = options.y || options.height;
+			}
+			else
+			{
+				this.width = arguments[0];
+				this.height = arguments[1];
+			}
 
-		this.data = this.initializeCells(this.width, this.height);
+			this.data = this.initializeCells(this.width, this.height);
+		}
 
 		this.center = { x: Math.floor(this.width / 2), y: Math.floor(this.height / 2) };
 		this.corners = [
@@ -61,6 +78,20 @@ class Grid
 		return Grid.flatten(this.data);
 	}
 
+	serialize()
+	{
+		const values = [];
+		for (let y = 0; y < this.height; y++)
+		{
+			for (let x = 0; x < this.width; x++)
+			{
+				values.push(this.at({ x, y }) || ' ');
+			}
+		}
+
+		return values.join('');
+	}
+
 	toCell(location)
 	{
 		return (location.x + location.y * this.height);
@@ -69,6 +100,83 @@ class Grid
 	toLocation(cell)
 	{
 		return new Vector2D(cell % this.height, Math.floor(cell / this.height));
+	}
+
+	isValid(location)
+	{
+		return location && (location.x >= 0 && location.x < this.width && location.y >= 0 && location.y < this.height);
+	}
+
+	isEqual(other, options={})
+	{
+		console.assert(other instanceof Grid, "Unexpected value for `other`");
+
+		// console.debug("This");
+		this.display();
+		// console.debug("Other");
+		other.display();
+
+		const isEqual = (a, b) => {
+			if (a.length !== b.length)
+			{
+				console.debug("Different row count");
+			}
+			else
+			{
+				return a.every((r, ri) => {
+					if (r.length !== b[ri].length)
+					{
+						console.debug("Different column count on row", ri);
+					}
+					else
+					{
+						return r.every((c, ci) => {
+							const bc = b[ri][ci];
+							// console.debug(ci, ri, c, bc, options.normalize, !!c, !!bc);
+							return options.normalize ? !!c === !!bc : c === bc;
+						});
+					}
+				});
+			}
+		};
+
+		let equal = isEqual(this.data, other.data);
+
+		if (options.rotate)
+		{
+			let rotation;
+			for (rotation = 0; rotation < 4 && equal === false; rotation++)
+			{
+				console.debug("Rotating");
+				this.rotate(90);
+				equal = isEqual(this.data, other.data);
+			}
+		}
+
+		// let equal = _.isEqual(this.data, other.data);
+
+		// if (!equal)
+		// {
+		// 	if (options.normalize)
+		// 	{
+		// 		const a = new Grid(this.data.map(r => r.map(c => c ? 1 : 0)));
+		// 		const b = new Grid(other.data.map(r => r.map(c => c ? 1 : 0)));
+		// 		equal = a.isEqual(b, _.omit(options, 'normalize'));
+		// 	}
+		// 	else if (options.rotate)
+		// 	{
+		// 		equal = this.isEqual(other);
+
+		// 		let rotation;
+		// 		for (rotation = 0; rotation < 4 && equal === false; rotation++)
+		// 		{
+		// 			this.rotate(90);
+		// 			equal = this.isEqual(other);
+		// 		}
+		// 	}
+		// }
+
+		return equal;
 	}
 
 	reset()
@@ -83,7 +191,7 @@ class Grid
 		return c;
 	}
 
-	rotate(degrees)
+	rotate(degrees=90)
 	{
 		const valid = (degrees > 0 && degrees % 90) === 0;
 		console.assert(valid, "Can only rotate by 90 degree increments");
@@ -93,35 +201,59 @@ class Grid
 			while (degrees > 0)
 			{
 				// Rotate...
-				this.data = Grid.rotate(this.data);
+				// this.data = Grid.rotate(this.data);
+				const clone = this.clone();
+
+				clone.data[0][0] = this.data[2][0];
+				clone.data[0][1] = this.data[1][0];
+				clone.data[0][2] = this.data[0][0];
+
+				clone.data[1][0] = this.data[2][1];
+				clone.data[1][1] = this.data[1][1];
+				clone.data[1][2] = this.data[0][1];
+
+				clone.data[2][0] = this.data[2][2];
+				clone.data[2][1] = this.data[1][2];
+				clone.data[2][2] = this.data[0][2];
+
+				this.data = clone.data;
 
 				degrees = degrees - 90;
 			}
 		}
 	}
 
+	inverse()
+	{
+		this.data = this.data.map(r => r.map(c => !!c ? 0 : 1));
+	}
+
 	display(log)
 	{
-		Grid.prettyPrint(this.data, log);
+		Grid.prettyPrint(this.data, log === undefined ? true : log);
 	}
 
 	place(location, token)
 	{
-		console.assert(arguments.length === 2, "Must provide two arguments, location and token");
+		return this.set(location, token, false);
+	}
+
+	set(location, value, options={})
+	{
+		console.assert(arguments.length >= 2, "Must provide two arguments, location and token");
 		console.assert(_.isNumber(location.x) && _.isNumber(location.y), "location argument must have numeric x and y attributes");
-		console.assert(token !== undefined && token !== null, "Token must be a value");
+		console.assert(value !== undefined && value !== null, "Token must be a value");
 
 		let ok = false;
-		if (this.at(location) === '')
+		if (this.at(location) === '' || options.overwrite)
 		{
-			const { x, y } = { ...location };
-			this.data[location.y][location.x] = token;
+			this.data[location.y][location.x] = value;
 			ok = true;
 		}
 		else
 		{
 			this.display(true);
-			console.error(`Cannot place '${token}' at (${location.x}, ${location.y}): Invalid location`);
+			console.error(`Cannot overwrite value at (${location.x}, ${location.y})`);
 		}
 
 		return ok;
@@ -130,11 +262,23 @@ class Grid
 	at(location)
 	{
 		return this.isValid(location) ? this.data[location.y][location.x] : undefined;
-	};
+	}
 
-	isValid(location)
+	freeCount()
 	{
-		return location && (location.x >= 0 && location.x < this.width && location.y >= 0 && location.y < this.height);
+		let free = 0;
+		for (let y = 0; y < this.height; y++)
+		{
+			for (let x = 0; x < this.width; x++)
+			{
+				if (this.at({ x, y }) === '')
+				{
+					++free;
+				}
+			}
+		}
+
+		return free;
 	}
 
 	// 
@@ -235,7 +379,7 @@ Grid.findRotation = (a, b) => {
 	for (rotation = 0; rotation < 4 && match === false; rotation++)
 	{
 		b = Grid.rotate(b);
-		match = _.isEqual(a, b);
+		match = a.isEqual(b);
 	}
 
 	// console.log(match, rotation);

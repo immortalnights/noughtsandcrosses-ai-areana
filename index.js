@@ -7,14 +7,16 @@ const game = new Game();
 // put the game on the global variable to allow debugging
 global.game = game;
 
-game.join(new AI({ id: 'A', token: 'X', difficulty: 'novice' }));
-game.join(new AI({ id: 'B', token: '0', difficulty: 'learning' }));
+game.join(new AI({ id: 'A', token: '0', difficulty: 'expert' }));
+game.join(new AI({ id: 'B', token: 'X', difficulty: 'learning' }));
 
 game.start();
 
 const maxSets = 1;
-const maxGames = 500;
+const maxGames = 50;
 
+global.game.players[1].brain.memory.load('./data/brain.json');
+console.log("Memory", Object.keys(global.game.players[1].brain.memory.data).length);
 
 let set = 0;
 console.time("Duration");
@@ -27,9 +29,8 @@ while (set < maxSets)
 	{
 		game.restart();
 
-		let loopBreak = 100;
 		let winner = false;
-		while (!winner && loopBreak > 0)
+		while (!winner)
 		{
 			game.nextTurn();
 
@@ -40,22 +41,19 @@ while (set < maxSets)
 				// console.log(`=========== Game ${played} Winner: ${winner} ===========`);
 				results[winner] += 1;
 			}
-
-			// prevent the app from spinning if game terns are broken
-			--loopBreak;
 		}
 
 		++played;
 	}
 
-	results.percent = Math.floor((results['0'] / maxGames) * 100);
+	results.percent = Math.floor((results['X'] / maxGames) * 100);
 	console.log("Finished", results);
 
 	++set;
 }
 console.timeEnd("Duration");
 
-global.game.players[1].brain.memory.save('E:\\brain.json');
+global.game.players[1].brain.memory.save('./data/brain.json');
 console.log("Memory", Object.keys(global.game.players[1].brain.memory.data).length);
 
 

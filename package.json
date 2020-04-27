@@ -13,5 +13,8 @@
   "dependencies": {
     "nodemon": "^2.0.2",
     "underscore": "^1.10.2"
+  },
+  "nodemonConfig": {
+    "ignore": ["data/*"]
   }
 }

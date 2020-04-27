@@ -14,15 +14,23 @@ class Memory
 		this.data = {};
 	}
 
-	load(file)
+	load(path)
 	{
-
+		if (fs.existsSync(path))
+		{
+			const data = fs.readFileSync(path, 'utf-8');
+			this.data = JSON.parse(data);
+		}
+		else
+		{
+			console.error(`Failed to load saved data: File not found '${path}'`);
+		}
 	}
 
-	save(file)
+	save(path)
 	{
 		const data = JSON.stringify(this.data, null, 2);
-		fs.writeFileSync(file, data, 'utf-8');
+		fs.writeFileSync(path, data, 'utf-8');
 	}
 
 	commit(reward)
@@ -200,28 +208,33 @@ class Memory
 
 	applyBias(record, bias, reward, key)
 	{
+		const limit = 250;
+
 		if (reward > 0)
 		{
-			// Calculate percentage
-			let occurrences = 0;
-			record.forEach(c => {
-				if (c === bias)
-				{
-					++occurrences;
-				}
-			});
+			if (record.length < limit)
+			{
+				// Calculate percentage
+				let occurrences = 0;
+				record.forEach(c => {
+					if (c === bias)
+					{
+						++occurrences;
+					}
+				});
 
-			const weight = (occurrences / record.length);
-			if (weight < 0.9)
-			{
-				for (let r = 0; r < reward; r++)
+				const weight = (occurrences / record.length);
+				if (weight < 0.9)
 				{
-					record.push(bias);
+					for (let r = 0; r < reward; r++)
+					{
+						record.push(bias);
+					}
 				}
-			}
-			else
-			{
-				console.log(`Not adding more weight to ${bias} at ${weight} (${occurrences} of ${record.length}) for ${key}`);
+				else
+				{
+					// console.debug(`Not adding more weight to ${bias} at ${weight} (${occurrences} of ${record.length}) for ${key}`);
+				}
 			}
 		}
 		else if (reward < 0)

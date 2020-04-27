@@ -1,4 +1,5 @@
 const _ = require('underscore');
+const Vector2D = require('../vector2d');
 
 module.exports = class Expert {
 	run(player, board)

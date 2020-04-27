@@ -39,6 +39,12 @@ class Memory
 		this.moves = [];
 	}
 
+	record(grid, cell)
+	{
+		console.assert(grid instanceof Grid, "Cannot record move: Invalid grid");
+		this.moves.push({ grid, cell });
+	}
+
 	find(grid)
 	{
 		const rotate = (data) => {
@@ -70,46 +76,34 @@ class Memory
 		let key = clone.serialize();
 		let rotation;
 		// console.log(`Find '${key}'`);
-		for (rotation = 0; rotation < 4 && !result.record; rotation++)
+		for (rotation = 0; rotation < 4; rotation++)
 		{
 			if (this.data[key])
 			{
-				// console.log(`Found match at rotation ${rotation} '${key}'`);
-				// Rotate the memory record to match the grid orientation
-				let record = this.data[key].clone();
-				// record.display();
-				for (let r = 4 - rotation; r > 0; r--)
-				{
-					// console.log("Rotate record");
-					record.rotate();
-				}
-				// record.display();
-
-				result = { record, index: key, rotation: rotation };
+				// console.log(`Found '${key}' at rotation ${rotation}:`, this.data[key]);
+				result = { record: this.data[key], index: key, rotation: rotation };
 				break;
 			}
 			else
 			{
-				// clone.display();
 				clone.rotate();
-				// clone.display();
-
 				key = clone.serialize();
 				// console.log(`Rotated key '${key}'`);
 			}
 		}
 
-		// for (let index = 0; index < this.data.length && !result.record; index++)
-		// {
-		// 	const record = this.data[index].clone();
-
-		// 	if (record.isEqual(grid, { normalize: true, rotate: true }))
-		// 	{
-		// 		result = { record, index };
-		// 	}
-		// }
-
 		return result;
+	}
+
+	add(grid)
+	{
+		const { record } = this.find(grid);
+		console.assert(!record, "Failed to add record, record already exists!");
+
+		const index = grid.serialize();
+		this.data[index] = this.makeBucket(grid);
+
+		return this.data[index];
 	}
 
 	// store a given `grid` layout as a weighted matrix
@@ -121,154 +115,147 @@ class Memory
 
 		let { record, index, rotation } = this.find(grid);
 
-		if (!!record)
-		{
-			// console.debug(`Found record at with index '${index}'`);
-		}
-		else
-		{
-			// Create a new weighted matrix for the grid layout if one is not found
-			// console.debug("Creating new memory matrix for grid");
-			record = new Grid(this.makeWeightedRecord(grid.data));
-		}
+		console.assert(!!record, `Failed to find record for '${grid.serialize()}'`);
 
 		// Apply weighting bias to a given location
 		if (bias !== undefined && reward !== undefined)
 		{
-			// console.debug("Applying bias to record");
-			this.applyBias(record, bias, reward);
+			// Rotate the bias cell by the amount the record is rotated to ensure the correct cell is weighted
+			const rotatedCell = this.rotateCell(bias, rotation);
+
+			if (record.indexOf(rotatedCell) === -1)
+			{
+				const gridIndex = grid.serialize();
+				console.error(`Cannot add bias to ${rotatedCell} (from ${bias} by ${rotation}) for '${gridIndex}' as memory '${index}'`);
+			}
+			else
+			{
+				// console.debug(`Applying bias to record '${index}' ${rotatedCell} ${reward}`);
+				this.applyBias(record, rotatedCell, reward, index);
+			}
 		}
 
-		if (index === -1)
+		this.data[index] = record;
+	}
+
+	rotateCell(cell, rotation)
+	{
+		const original = cell;
+		for (let r = 0; r < rotation; r++)
 		{
-			index = grid.serialize();
-			this.data[index] = record;
-			// console.debug(`Save new memory record '${index}'`);
-			// record.display();
+			// There may be a smarter way to do this...
+			switch (cell)
+			{
+				case 0:
+				{
+					cell = 2;
+					break
+				}
+				case 1:
+				{
+					cell = 5;
+					break;
+				}
+				case 2:
+				{
+					cell = 8;
+					break;
+				}
+				case 3:
+				{
+					cell = 1;
+					break;
+				}
+				case 4:
+				{
+					// No change
+					break;
+				}
+				case 5:
+				{
+					cell = 7;
+					break;
+				}
+				case 6:
+				{
+					cell = 0;
+					break;
+				}
+				case 7:
+				{
+					cell = 3;
+					break;
+				}
+				case 8:
+				{
+					cell = 6;
+					break;
+				}
+			}
 		}
-		else
+
+		// console.debug("rotate", original, cell, rotation);
+		return cell;
+	}
+
+	applyBias(record, bias, reward, key)
+	{
+		if (reward > 0)
 		{
-			for (let r = 0; r < rotation; r++)
+			// Calculate percentage
+			let occurrences = 0;
+			record.forEach(c => {
+				if (c === bias)
+				{
+					++occurrences;
+				}
+			});
+
+			const weight = (occurrences / record.length);
+			if (weight < 0.9)
 			{
-				// console.log("Rotate");
-				record.rotate();
+				for (let r = 0; r < reward; r++)
+				{
+					record.push(bias);
+				}
 			}
-
-			const a = record.data.map(r => r.map(c => c ? 1 : 0).join('')).join('');
-			const b = this.data[index].data.map(r => r.map(c => c ? 1 : 0).join('')).join('');
-
-			if (a !== b)
+			else
 			{
-				console.log(a);
-				record.display();
-				console.log(b);
-				this.data[index].display();
-				console.assert(false, `Mismatch for index '${index}' / record`, rotation);
+				console.log(`Not adding more weight to ${bias} at ${weight} (${occurrences} of ${record.length}) for ${key}`);
 			}
+		}
+		else if (reward < 0)
+		{
+			let i = record.indexOf(bias) + 1;
+			for (let r = 0; r < Math.abs(reward) && i !== -1; r++)
+			{
+				i = record.indexOf(bias, i);
 
-			this.data[index] = record;
-			// console.debug(`Replace existing memory record '${index}'`);
-			// record.display();
+				if (i !== -1)
+				{
+					record.splice(i, 1);
+				}
+			}
 		}
 	}
 
-	applyBias(grid, bias, reward)
+	makeBucket(grid)
 	{
-		// Identify free spaces in record, for memory records, free spaces have a value
-		const free = 9 - grid.freeCount();
-
-		// console.debug("free", free);
-		// grid.display();
-
-		// find the winner cell value
-		const moveLocation = { x: bias % grid.width, y: Math.floor(bias / grid.height) };
-		const adjustmentValue = grid.at(moveLocation) * (reward ? .75 : -.25);
-		// console.log(grid.at(moveLocation), 'adj', adjustmentValue);
-
-		// console.log("before", record);
+		const bucket = [];
 		for (let y = 0; y < grid.height; y++)
 		{
 			for (let x = 0; x < grid.width; x++)
 			{
-				let value = grid.at({ x, y });
-				if (value)
+				// console.log(x, y, grid.at({ x, y }))
+				if (grid.at({ x, y }) === '')
 				{
-					const cell = x + y * grid.height;
-					if (cell === bias)
-					{
-						// console.log("inc", flat[i]);
-						value = value + adjustmentValue;
-						// console.log("inc", flat[i]);
-					}
-					else
-					{
-						value = value - (adjustmentValue / (free - 1));
-					}
-				}
-
-				grid.set({ x, y}, value, { overwrite: true });
-			}
-		}
-
-		// To total value shoud be (as good as) 1
-		let total = 0;
-		for (let y = 0; y < grid.height; y++)
-		{
-			for (let x = 0; x < grid.width; x++)
-			{
-				total += Number(grid.at({ x, y }));
-			}
-		}
-
-		if (total > 0.998)
-		{
-			grid.display();
-			console.log("Total", total);
-			console.assert(false, "Total is too low", total);
-		}
-
-
-		// grid.display();
-	}
-
-	record(grid, cell)
-	{
-		console.assert(grid instanceof Grid, "Cannot record move: Invalid grid");
-		this.moves.push({ grid, cell });
-	}
-
-	makeWeightedRecord(matrix)
-	{
-		// initilize
-		// give each free space equal weight
-		// identify how many empty spaces there are
-		const flat = Grid.flatten(matrix);
-		let free = 0;
-		for (let i = 0; i < flat.length; i++)
-		{
-			free = flat[i] === '' ? free + 1 : free;
-		}
-
-		const record = [];
-		for (let y = 0; y < matrix[0].length; y++)
-		{
-			const row = []
-			for (let x = 0; x < matrix.length; x++)
-			{
-				if (matrix[y][x] === '')
-				{
-					row.push(1 / free);
-				}
-				else
-				{
-					row.push(0);
+					bucket.push(grid.toCell({ x, y }));
 				}
 			}
-
-			record.push(row);
 		}
 
-		return record;
+		// console.log("bucket", bucket);
+		return bucket;
 	}
 }
 
@@ -288,41 +275,23 @@ module.exports = class LearningAI
 
 	findMove(grid)
 	{
+		const random = (min, max) => {
+			return Math.floor(Math.random() * (max - min) ) + min;
+		};
+
 		// If this move has been played before
-		let { record } = this.memory.find(grid);
+		let { record, rotation } = this.memory.find(grid);
 
 		if (!record)
 		{
 			// Create a new weighted matrix for the grid layout if one is not found
 			// console.debug("Creating new memory matrix for grid");
-			record = new Grid(this.memory.makeWeightedRecord(grid.data));
+			record = this.memory.add(grid);
 		}
 
-		// https://stackoverflow.com/questions/8435183/generate-a-weighted-random-number
-		const weightedRandom = (spec) => {
-			let i;
-			let sum = 0;
-			const rand = Math.random();
-			let result;
-
-			for (i in spec)
-			{
-				sum = spec[i] ? sum + spec[i] : sum + 0;
-				if (rand <= sum)
-				{
-					result = Number(i);
-					break;
-				}
-			}
-
-			return result;
-		};
-
-		const f = record.toArray();
-		const weights = _.mapObject(f, r => r);
-		const choice = weightedRandom(weights);
-
-		return choice;
+		let cell = record[random(0, record.length)];
+		cell = this.memory.rotateCell(cell, 4 - rotation);
+		return cell;
 	}
 
 	run(player, grid)
@@ -337,14 +306,14 @@ module.exports = class LearningAI
 
 	finish(winner)
 	{
-		let reward = 0;
-		if (this.token === winner)
+		let reward;
+		if (winner === 'draw')
 		{
-			reward = 1;
+			reward = 0;
 		}
-		else if (winner !== 'draw')
+		else
 		{
-			reward = -1;
+			reward = winner ? 3 : -1;
 		}
 
 		this.memory.commit(reward);

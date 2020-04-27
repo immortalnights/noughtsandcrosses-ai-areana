@@ -12,10 +12,11 @@ class Grid
 			this.width = this.data[0].length;
 			this.height = this.data.length;
 		}
-		else if (options instanceof String && options.length === 9)
+		else if (options.length === 9)
 		{
-			const parts = str.split('');
-			this.data = [parts.slice(0, 3), parts.slice(3, 6), parts.slice(9, 9)];
+			// console.debug("Import", options);
+			const parts = options.split('').map(c => c !== ' ' ? c : '');
+			this.data = [parts.slice(0, 3), parts.slice(3, 6), parts.slice(6, 9)];
 			this.width = this.data[0].length;
 			this.height = this.data.length;
 		}

@@ -40,7 +40,7 @@ class AI extends EventEmitter
 		game.on('game:over', (winner) => {
 			if (this.brain.finish)
 			{
-				this.brain.finish(winner);
+				this.brain.finish(winner === 'draw' ? winner : (this.token === winner));
 			}
 		});
 	}

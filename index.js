@@ -12,39 +12,47 @@ game.join(new AI({ id: 'B', token: '0', difficulty: 'learning' }));
 
 game.start();
 
-let results = { 'X': 0, '0': 0, 'draw': 0 };
+const maxSets = 1;
+const maxGames = 500;
 
-const play = () => {
-	let loopBreak = 100;
-	let winner = false;
-	while (!winner && loopBreak > 0)
+
+let set = 0;
+console.time("Duration");
+while (set < maxSets)
+{
+	let played = 0;
+	let results = { 'X': 0, '0': 0, 'draw': 0 };
+
+	while (played < maxGames)
 	{
-		game.nextTurn();
+		game.restart();
 
-		winner = game.checkForEndOfGame();
-		if (winner)
+		let loopBreak = 100;
+		let winner = false;
+		while (!winner && loopBreak > 0)
 		{
-			game.board.display(true);
-			console.log(`=========== Game ${played} Winner: ${winner} ===========`);
-			results[winner] += 1;
+			game.nextTurn();
+
+			winner = game.checkForEndOfGame();
+			if (winner)
+			{
+				// game.board.display(true);
+				// console.log(`=========== Game ${played} Winner: ${winner} ===========`);
+				results[winner] += 1;
+			}
+
+			// prevent the app from spinning if game terns are broken
+			--loopBreak;
 		}
 
-		// prevent the app from spinning if game terns are broken
-		--loopBreak;
+		++played;
 	}
-}
 
-let played = 0;
-const maxGames = 10;
+	results.percent = Math.floor((results['0'] / maxGames) * 100);
+	console.log("Finished", results);
 
-console.time("Duration");
-while (played < maxGames)
-{
-	game.restart();
-	play();
-	++played;
+	++set;
 }
-console.log("Finished", results);
 console.timeEnd("Duration");
 
 global.game.players[1].brain.memory.save('E:\\brain.json');

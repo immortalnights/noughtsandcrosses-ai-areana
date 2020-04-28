@@ -18,8 +18,31 @@ class Memory
 	{
 		if (fs.existsSync(path))
 		{
-			const data = fs.readFileSync(path, 'utf-8');
-			this.data = JSON.parse(data);
+			try
+			{
+				const data = JSON.parse(fs.readFileSync(path, 'utf-8'));
+				if (_.isObject(data) === false)
+				{
+					console.error("Invalid memory data: Invalid object");
+				}
+				else if (_.isEmpty(data) === false)
+				{
+					const keys = Object.keys(data);
+					if (keys.every(k => k.length === 9) === false)
+					{
+						console.error("Invalid memory data; found invalid key(s)");
+					}
+					else
+					{
+						console.log(`Loaded memory data (${keys.length})`);
+						this.data = data;
+					}
+				}
+			}
+			catch (e)
+			{
+				console.error(`Failed to load memory data '${path}':`, e)
+			}
 		}
 		else
 		{
@@ -29,8 +52,15 @@ class Memory
 
 	save(path)
 	{
-		const data = JSON.stringify(this.data, null, 2);
-		fs.writeFileSync(path, data, 'utf-8');
+		try
+		{
+			const data = JSON.stringify(this.data, null, 2);
+			fs.writeFileSync(path, data, 'utf-8');
+		}
+		catch (e)
+		{
+			console.error(`Failed to save memory data to 'path':`, e);
+		}
 	}
 
 	commit(reward)

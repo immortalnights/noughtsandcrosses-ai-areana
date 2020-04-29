@@ -1,5 +1,6 @@
 const _ = require('underscore');
 const Vector2D = require('../vector2d');
+const { findWinningPaths, findBlockingPaths } = require('./common');
 
 module.exports = class Expert {
 	run(player, board)
@@ -8,19 +9,8 @@ module.exports = class Expert {
 
 		// check for blocks
 		const paths = board.paths(3);
-		const winningPaths = paths.filter(p => {
-			const tokens = _.compact(_.pluck(p, 'token'));
-			return tokens.length === 2 && tokens.every(t => t === player.token);
-		});
-		// console.log("Winning Paths")
-		// console.log(pathArrayToString(winningPaths));
-
-		const blockingPaths = paths.filter(p => {
-			const tokens = _.compact(_.pluck(p, 'token'));
-			return tokens.length === 2 && tokens.every(t => t !== player.token);
-		});
-		// console.log("Blocking Paths");
-		// console.log(pathArrayToString(blockingPaths));
+		const winningPaths = findWinningPaths(paths, player.token);
+		const blockingPaths = findBlockingPaths(paths, player.token);
 
 		const tryMove = loc => {
 			const ok = board.at(loc) === '';

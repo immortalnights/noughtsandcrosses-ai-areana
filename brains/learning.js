@@ -63,10 +63,10 @@ class Memory
 		}
 	}
 
-	commit(reward)
+	commit(winner)
 	{
 		this.moves.forEach(move => {
-			this.store(move.grid, move.cell, reward);
+			this.store(move.grid, move.cell, winner);
 		});
 
 		const keys = Object.keys(this.data);
@@ -147,7 +147,7 @@ class Memory
 	// store a given `grid` layout as a weighted matrix
 	// give `bias` to the specified location.
 	// if the grid exists; modify the bias by the `reward` percentage
-	store(grid, bias, reward)
+	store(grid, bias, winner)
 	{
 		console.assert(grid instanceof Grid, "Invalid grid");
 
@@ -156,24 +156,52 @@ class Memory
 		console.assert(!!record, `Failed to find record for '${grid.serialize()}'`);
 
 		// Apply weighting bias to a given location
-		if (bias !== undefined && reward !== undefined)
+		if (bias !== undefined)
 		{
 			// Rotate the bias cell by the amount the record is rotated to ensure the correct cell is weighted
 			const rotatedCell = this.rotateCell(bias, rotation);
 
-			if (record.indexOf(rotatedCell) === -1)
+			if (record[rotatedCell] === undefined)
 			{
 				const gridIndex = grid.serialize();
 				console.error(`Cannot add bias to ${rotatedCell} (from ${bias} by ${rotation}) for '${gridIndex}' as memory '${index}'`);
 			}
 			else
 			{
+				const reward = this.calculateMoveScore(new Grid(index), rotatedCell, winner);
+
 				// console.debug(`Applying bias to record '${index}' ${rotatedCell} ${reward}`);
 				this.applyBias(record, rotatedCell, reward, index);
 			}
 		}
 
 		this.data[index] = record;
+	}
+
+	calculateMoveScore(grid, cell, winner)
+	{
+		let reward = 0;
+
+		// grid.display();
+		// console.debug("Move", cell, "Winner", winner);
+
+		// win reward
+		if (winner === true)
+		{
+			reward = 10;
+		}
+		// draw reward
+		else if (winner === undefined)
+		{
+			reward = 4;
+		}
+		// loss penalty
+		else
+		{
+			reward = -1;
+		}
+
+		return reward;
 	}
 
 	rotateCell(cell, rotation)
@@ -240,51 +268,25 @@ class Memory
 	{
 		const limit = 250;
 
+		let value = record[bias];
+
 		if (reward > 0)
 		{
-			if (record.length < limit)
-			{
-				// Calculate percentage
-				let occurrences = 0;
-				record.forEach(c => {
-					if (c === bias)
-					{
-						++occurrences;
-					}
-				});
-
-				const weight = (occurrences / record.length);
-				if (weight < 0.9)
-				{
-					for (let r = 0; r < reward; r++)
-					{
-						record.push(bias);
-					}
-				}
-				else
-				{
-					// console.debug(`Not adding more weight to ${bias} at ${weight} (${occurrences} of ${record.length}) for ${key}`);
-				}
-			}
+			value = Math.min(value + reward, 1000);
 		}
 		else if (reward < 0)
 		{
-			let i = record.indexOf(bias) + 1;
-			for (let r = 0; r < Math.abs(reward) && i !== -1; r++)
-			{
-				i = record.indexOf(bias, i);
-
-				if (i !== -1)
-				{
-					record.splice(i, 1);
-				}
-			}
+			value = Math.max(value + reward, 1);
 		}
+
+		record[bias] = value;
 	}
 
 	makeBucket(grid)
 	{
-		const bucket = [];
+		// console.debug(`Make bucket for '${grid.serialize()}'`);
+
+		const bucket = {};
 		for (let y = 0; y < grid.height; y++)
 		{
 			for (let x = 0; x < grid.width; x++)
@@ -292,20 +294,27 @@ class Memory
 				// console.log(x, y, grid.at({ x, y }))
 				if (grid.at({ x, y }) === '')
 				{
-					bucket.push(grid.toCell({ x, y }));
+					bucket[grid.toCell({ x, y })] = 0;
+					// bucket.push(grid.toCell({ x, y }));
 				}
 			}
 		}
 
-		// console.log("bucket", bucket);
+		const keys = Object.keys(bucket);
+		keys.forEach(key => {
+			bucket[key] = Math.ceil(90 / keys.length);
+		});
+
+		// console.debug("Bucket", bucket);
 		return bucket;
 	}
 }
 
 module.exports = class LearningAI
 {
-	constructor(options)
+	constructor(player, options)
 	{
+		this.token = player.token;
 		this.memory = new Memory();
 	}
 
@@ -322,6 +331,8 @@ module.exports = class LearningAI
 			return Math.floor(Math.random() * (max - min) ) + min;
 		};
 
+		const gridKey = grid.serialize();
+
 		// If this move has been played before
 		let { record, rotation } = this.memory.find(grid);
 
@@ -332,9 +343,24 @@ module.exports = class LearningAI
 			record = this.memory.add(grid);
 		}
 
-		let cell = record[random(0, record.length)];
-		cell = this.memory.rotateCell(cell, 4 - rotation);
-		return cell;
+		const keys = Object.keys(record);
+		const total = _.reduce(record, (memo, num) => {
+			return memo + num;
+		}, 0);
+
+		const pick = random(1, total);
+
+		let value = 0;
+		let cell = _.find(keys, index => {
+			value = value + record[index];
+			return pick < value;
+		});
+
+		cell = Number(cell);
+
+		let newCell = this.memory.rotateCell(cell, 4 - rotation);
+		// console.debug(`Selected cell ${cell} from ${keys} for '${gridKey}' rotated by ${rotation} to ${newCell}`);
+		return newCell;
 	}
 
 	run(player, grid)
@@ -349,16 +375,6 @@ module.exports = class LearningAI
 
 	finish(winner)
 	{
-		let reward;
-		if (winner === 'draw')
-		{
-			reward = 0;
-		}
-		else
-		{
-			reward = winner ? 3 : -1;
-		}
-
-		this.memory.commit(reward);
+		this.memory.commit(winner === 'draw' ? undefined : winner);
 	}
 };

@@ -76,7 +76,16 @@ class Grid
 
 	toArray()
 	{
-		return Grid.flatten(this.data);
+		const values = [];
+		for (let y = 0; y < this.data.length; y++)
+		{
+			for (let x = 0; x < this.data[0].length; x++)
+			{
+				values.push(this.data[y][x]);
+			}
+		}
+
+		return values;
 	}
 
 	serialize()
@@ -231,7 +240,24 @@ class Grid
 
 	display(log)
 	{
-		Grid.prettyPrint(this.data, log === undefined ? true : log);
+		let str = '\n';
+		for (let y = 0; y < this.data.length; y++)
+		{
+			const row = [];
+			for (let x = 0; x < this.data[0].length; x++)
+			{
+				row.push(this.data[y][x] || ' ');
+			}
+
+			str += ' ' + row.join(' | ') + ((y < this.data.length - 1) ? '\n' : '');
+		}
+
+		if (log === undefined ? true : log)
+		{
+			console.log(str);
+		}
+
+		return str;
 	}
 
 	place(location, token)
@@ -406,37 +432,11 @@ Grid.rotate = (matrix) => {
 }
 
 Grid.flatten = (matrix) => {
-	const values = [];
-	for (let y = 0; y < matrix.length; y++)
-	{
-		for (let x = 0; x < matrix[0].length; x++)
-		{
-			values.push(matrix[y][x]);
-		}
-	}
-
-	return values;
+	
 }
 
 Grid.prettyPrint = (matrix, log) => {
-	let str = '';
-	for (let y = 0; y < matrix.length; y++)
-	{
-		const row = [];
-		for (let x = 0; x < matrix[0].length; x++)
-		{
-			row.push(matrix[y][x] || ' ');
-		}
-
-		str += ' ' + row.join(' | ') + '\n';
-	}
-
-	if (log)
-	{
-		console.log(str);
-	}
-
-	return str;
+	
 }
 
 module.exports = Grid;

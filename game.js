@@ -68,7 +68,15 @@ class Game extends EventEmitter
 
 	nextTurn()
 	{
-		this.turnIndex++;
+		if (this.turnIndex === -1)
+		{
+			// Find X to play first
+			this.turnIndex = this.players.findIndex(p => p.token === 'X');
+		}
+		else
+		{
+			this.turnIndex++;
+		}
 
 		if (this.turnIndex >= this.players.length)
 		{

@@ -188,12 +188,12 @@ class Memory
 		// win reward
 		if (winner === true)
 		{
-			reward = 10;
+			reward = 5;
 		}
 		// draw reward
 		else if (winner === undefined)
 		{
-			reward = 4;
+			reward = 2;
 		}
 		// loss penalty
 		else

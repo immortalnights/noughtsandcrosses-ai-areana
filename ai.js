@@ -15,12 +15,15 @@ class AI extends EventEmitter
 		this.token = token;
 		this.moveFailures = 0;
 		this.difficulty = difficulty;
-
-		const brain = Brains[difficulty] ? Brains[difficulty] : Brains['novice'];
-
-		this.brain = new brain(this, {});
+		this.initBrain(this.difficulty);
 
 		console.assert(this.brain, "Failed to initialize AI Player brain");
+	}
+
+	initBrain(difficulty)
+	{
+		const brain = Brains[difficulty] ? Brains[difficulty] : Brains['novice'];
+		this.brain = new brain(this, {});
 	}
 
 	joinedGame(game)

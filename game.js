@@ -11,6 +11,11 @@ class Game extends EventEmitter
 		this.players = [];
 	}
 
+	initBoard(w, h)
+	{
+		this.board = new Grid(w, h);
+	}
+
 	isPlaying()
 	{
 		return this.status === 'PLAYING';
@@ -39,14 +44,12 @@ class Game extends EventEmitter
 	{
 		this.status = 'PLAYING';
 		this.turnIndex = -1;
-		this.board = new Grid(3, 3);
-		// this.nextTurn();
+		this.initBoard(3, 3)
 		// console.log(`Game has started`);
 	}
 
 	restart()
 	{
-		this.board = new Grid(3, 3);
 		this.start();
 	}
 
@@ -115,7 +118,7 @@ class Game extends EventEmitter
 		else
 		{
 			const cells = board.toArray();
-			const full = cells.every((c) => !!c);
+			const full = cells.every(c => !!c);
 			if (full)
 			{
 				winner = 'draw';

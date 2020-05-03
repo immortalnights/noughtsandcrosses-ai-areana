@@ -4,7 +4,7 @@ module.exports = {
 	findWinningPaths: (paths, token) => {
 		const winningPaths = paths.filter(p => {
 			const tokens = _.compact(_.pluck(p, 'token'));
-			return tokens.length === 2 && tokens.every(t => t === token);
+			return tokens.length === p.length - 1 && tokens.every(t => t === token);
 		});
 
 		// console.debug("Winning Paths")
@@ -15,7 +15,7 @@ module.exports = {
 	findBlockingPaths: (paths, token) => {
 		const blockingPaths = paths.filter(p => {
 			const tokens = _.compact(_.pluck(p, 'token'));
-			return tokens.length === 2 && tokens.every(t => t !== token);
+			return tokens.length === p.length - 1 && tokens.every(t => t !== token);
 		});
 
 		// console.debug("Blocking Paths")

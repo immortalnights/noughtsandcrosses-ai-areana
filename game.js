@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const _ = require('underscore');
-const Grid = require('./grid');
+const Grid = require('multiplayer-game-server/grid');
 
 class Game extends EventEmitter
 {

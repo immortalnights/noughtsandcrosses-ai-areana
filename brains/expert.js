@@ -1,5 +1,5 @@
 const _ = require('underscore');
-const Vector2D = require('../vector2d');
+const Vector2D = require('multiplayer-game-server/vector2d');
 const { findWinningPaths, findBlockingPaths } = require('./common');
 
 module.exports = class Expert {

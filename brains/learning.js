@@ -1,6 +1,6 @@
 const fs = require('fs');
 const _ = require('underscore');
-const Grid = require('../grid');
+const Grid = require('multiplayer-game-server/grid');
 
 class Memory
 {
@@ -314,7 +314,6 @@ module.exports = class LearningAI
 {
 	constructor(player, options)
 	{
-		this.token = player.token;
 		this.memory = new Memory();
 	}
 

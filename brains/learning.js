@@ -114,25 +114,32 @@ class Memory
 		};
 
 		// only support rotating a 3x3 grid
-		const maxRotation = (grid.width === 3 && grid.width === grid.height) ? 4 : 0;
-		const clone = grid.clone();
-		let key = clone.serialize();
-		let rotation;
-		// console.log(`Find '${key}'`);
-		for (rotation = 0; rotation < maxRotation; rotation++)
+		if (grid.width === 3 && grid.width === grid.height)
 		{
-			if (this.data[key])
+			const clone = grid.clone();
+			let key = clone.serialize();
+			let rotation;
+			// console.log(`Find '${key}'`);
+			for (rotation = 0; rotation < 4; rotation++)
 			{
-				// console.log(`Found '${key}' at rotation ${rotation}:`, this.data[key]);
-				result = { record: this.data[key], index: key, rotation: rotation };
-				break;
+				if (this.data[key])
+				{
+					// console.log(`Found '${key}' at rotation ${rotation}:`, this.data[key]);
+					result = { record: this.data[key], index: key, rotation: rotation };
+					break;
+				}
+				else
+				{
+					clone.rotate();
+					key = clone.serialize();
+					// console.log(`Rotated key '${key}'`);
+				}
 			}
-			else
-			{
-				clone.rotate();
-				key = clone.serialize();
-				// console.log(`Rotated key '${key}'`);
-			}
+		}
+		else if (this.data[key])
+		{
+			// console.log(`Found '${key}' at rotation ${rotation}:`, this.data[key]);
+			result = { record: this.data[key], index: key };
 		}
 
 		return result;

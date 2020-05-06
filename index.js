@@ -17,9 +17,6 @@ game.start();
 const maxSets = 1;
 const maxGames = 500;
 
-learningAI.brain.memory.load('./data/brain.json');
-console.log("Memory", Object.keys(learningAI.brain.memory.data).length);
-
 let set = 0;
 console.time("Duration");
 while (set < maxSets)
@@ -54,10 +51,6 @@ while (set < maxSets)
 	++set;
 }
 console.timeEnd("Duration");
-
-learningAI.brain.memory.save('./data/brain.json');
-console.log("Memory", Object.keys(learningAI.brain.memory.data).length);
-
 
 
 	// 	const play = () => {

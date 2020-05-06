@@ -321,6 +321,12 @@ class LearningAI
 	{
 		this.memory = new Memory();
 		this.options = options || {};
+
+		if (this.options.remember === true)
+		{
+			const path = this.options.path || './data/brain.json';
+			this.memory.load(path);
+		}
 	}
 
 	takeMove(grid, location, reward)
@@ -381,6 +387,11 @@ class LearningAI
 	finish(winner)
 	{
 		this.memory.commit(winner === 'draw' ? undefined : winner);
+		if (this.options.remember === true)
+		{
+			const path = this.options.path || './data/brain.json';
+			this.memory.save(path);
+		}
 	}
 };
 

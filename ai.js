@@ -23,7 +23,7 @@ class AI extends EventEmitter
 	initBrain(difficulty)
 	{
 		const brain = Brains[difficulty] ? Brains[difficulty] : Brains['novice'];
-		this.brain = new brain(this, {});
+		this.brain = new brain(this, { remember: true });
 	}
 
 	joinedGame(game)

@@ -27,12 +27,13 @@ class Memory
 				}
 				else if (_.isEmpty(data) === false)
 				{
+					const gridSize = 0 // TODO
 					const keys = Object.keys(data);
-					if (keys.every(k => k.length === 9) === false)
-					{
-						console.error("Invalid memory data; found invalid key(s)");
-					}
-					else
+					// if (keys.every(k => k.length === 9) === false)
+					// {
+					// 	console.error("Invalid memory data; found invalid key(s)");
+					// }
+					// else
 					{
 						console.log(`Loaded memory data (${keys.length})`);
 						this.data = data;
@@ -69,10 +70,11 @@ class Memory
 			this.store(move.grid, move.cell, winner);
 		});
 
-		const keys = Object.keys(this.data);
-		keys.forEach(s => {
-			console.assert(s.length === 9, "Memory key invalid: Too short");
-		});
+		// TODO need to know the grid save to validate the records
+		// const keys = Object.keys(this.data);
+		// keys.forEach(s => {
+		// 	console.assert(s.length === 9, "Memory key invalid: Too short");
+		// });
 
 		this.moves = [];
 	}
@@ -85,6 +87,7 @@ class Memory
 
 	find(grid)
 	{
+		// Rotate array for a 3x3 grid only
 		const rotate = (data) => {
 			data = data.split('');
 			let result = [];
@@ -110,11 +113,13 @@ class Memory
 			rotation: undefined
 		};
 
+		// only support rotating a 3x3 grid
+		const maxRotation = (grid.width === 3 && grid.width === grid.height) ? 4 : 0;
 		const clone = grid.clone();
 		let key = clone.serialize();
 		let rotation;
 		// console.log(`Find '${key}'`);
-		for (rotation = 0; rotation < 4; rotation++)
+		for (rotation = 0; rotation < maxRotation; rotation++)
 		{
 			if (this.data[key])
 			{
@@ -308,13 +313,14 @@ class Memory
 		// console.debug("Bucket", bucket);
 		return bucket;
 	}
-}
+};
 
-module.exports = class LearningAI
+class LearningAI
 {
 	constructor(player, options)
 	{
 		this.memory = new Memory();
+		this.options = options || {};
 	}
 
 	takeMove(grid, location, reward)
@@ -377,3 +383,5 @@ module.exports = class LearningAI
 		this.memory.commit(winner === 'draw' ? undefined : winner);
 	}
 };
+
+module.exports = LearningAI;

@@ -1,6 +1,6 @@
 const _ = require('underscore');
 const Vector2D = require('multiplayer-game-server/vector2d');
-const { findWinningPaths, findBlockingPaths } = require('./common');
+const { findWinningPaths, findBlockingPaths } = require('multiplayer-game-server/aicommon');
 
 module.exports = class Expert {
 	run(player, board)

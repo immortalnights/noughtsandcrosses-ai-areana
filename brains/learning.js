@@ -136,10 +136,14 @@ class Memory
 				}
 			}
 		}
-		else if (this.data[key])
+		else
 		{
-			// console.log(`Found '${key}' at rotation ${rotation}:`, this.data[key]);
-			result = { record: this.data[key], index: key };
+			const key = grid.serialize();
+			if (this.data[key])
+			{
+				// console.log(`Found '${key}' at rotation ${rotation}:`, this.data[key]);
+				result = { record: this.data[key], index: key };
+			}
 		}
 
 		return result;

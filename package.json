@@ -2,6 +2,10 @@
   "name": "noughtsandcrossesbattle",
   "version": "1.0.0",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/immortalnights/noughtsandcrosses-ai-areana.git"
+  },
   "main": "index.js",
   "scripts": {
     "start": "nodemon .",
@@ -12,7 +16,6 @@
   "license": "ISC",
   "dependencies": {
     "multiplayer-game-server": "git+https://github.com/immortalnights/multiplayer-game-server.git",
-    "nodemon": "^2.0.3",
     "underscore": "^1.10.2"
   },
   "nodemonConfig": {

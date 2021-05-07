@@ -16,7 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "multiplayer-game-server": "git+https://github.com/immortalnights/multiplayer-game-server.git",
-    "underscore": "^1.10.2"
+    "underscore": "^1.12.1"
   },
   "nodemonConfig": {
     "ignore": [
